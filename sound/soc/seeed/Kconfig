@@ -1,0 +1,5 @@
+config SND_SOC_SEEED_VOICECARD
+        tristate "SoC platform audio for SEEED 4way mic"
+        depends on SND_SOC_AC108_CODEC
+        select SND_SIMPLE_CARD
+        select SND_SIMPLE_CARD_UTILS

@@ -1,0 +1,349 @@
+/dts-v1/;
+
+#ifdef RPI364_OPTEE
+/memreserve/ 0x08000000 0x02000000;
+#endif
+
+#include "bcm2710.dtsi"
+#include "bcm283x-rpi-lan7515.dtsi"
+#include "bcm283x-rpi-csi1-2lane.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "raspberrypi,3-model-b-plus", "brcm,bcm2837";
+	model = "Raspberry Pi 3 Model B+";
+
+	chosen {
+		bootargs = "coherent_pool=1M 8250.nr_uarts=1";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		serial1 = &uart0;
+		mmc1 = &mmcnr;
+	};
+
+	rpi_backlight: rpi_backlight {
+		compatible = "raspberrypi,rpi-backlight";
+		firmware = <&firmware>;
+		status = "okay";
+	};
+
+	rpi_ft5406: rpi_ft5406 {
+		compatible = "rpi,rpi-ft5406";
+		firmware = <&firmware>;
+		status = "okay";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		key-volume-up {
+			lable = "volume-up";
+			linux,code = <KEY_VOLUMEUP>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		key-volume-down {
+			lable = "volume-down";
+			linux,code = <KEY_VOLUMEDOWN>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		key-fastforward {
+			lable = "fastforward";
+			linux,code = <KEY_FASTFORWARD>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		key-rewind {
+			lable = "rewind";
+			linux,code = <KEY_REWIND>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		key-playpause {
+			lable = "playpause";
+			linux,code = <KEY_PLAYPAUSE>;
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio {
+	spi0_pins: spi0_pins {
+		brcm,pins = <9 10 11>;
+		brcm,function = <4>; /* alt0 */
+	};
+
+	spi0_cs_pins: spi0_cs_pins {
+		brcm,pins = <8 7>;
+		brcm,function = <1>; /* output */
+	};
+
+	i2c0_pins: i2c0 {
+		brcm,pins = <0 1>;
+		brcm,function = <4>;
+	};
+
+	i2c1_pins: i2c1 {
+		brcm,pins = <2 3>;
+		brcm,function = <4>;
+	};
+
+	i2s_pins: i2s {
+		brcm,pins = <18 19 20 21>;
+		brcm,function = <4>; /* alt0 */
+	};
+
+	sdio_pins: sdio_pins {
+		brcm,pins =     <34 35 36 37 38 39>;
+		brcm,function = <7>; // alt3 = SD1
+		brcm,pull =     <0 2 2 2 2 2>;
+	};
+
+	bt_pins: bt_pins {
+		brcm,pins = <43>;
+		brcm,function = <4>; /* alt0:GPCLK2 */
+		brcm,pull = <0>;
+	};
+
+	uart0_pins: uart0_pins {
+		brcm,pins = <32 33>;
+		brcm,function = <7>; /* alt3=UART0 */
+		brcm,pull = <0 2>;
+	};
+
+	uart1_pins: uart1_pins {
+		brcm,pins;
+		brcm,function;
+		brcm,pull;
+	};
+
+	audio_pins: audio_pins {
+		brcm,pins = <40 41>;
+		brcm,function = <4>;
+	};
+
+	/* Needs to describe gpio settings at config.txt */
+	key_volume_up: key_volume_up {
+		brcm,pins = <16>;
+		brcm,function = <1>; /* BCM2835_FSEL_GPIO_IN */
+		brcm,pull = <2>; /* BCM2835_PUD_UP */
+	};
+
+	key_volume_down: key_volume_down {
+		brcm,pins = <13>;
+		brcm,function = <1>;
+		brcm,pull = <2>;
+	};
+
+	key_fastforward: key_fastforward {
+		brcm,pins = <6>;
+		brcm,function = <1>;
+		brcm,pull = <2>;
+	};
+
+	key_rewind: key_rewind {
+		brcm,pins = <12>;
+		brcm,function = <1>;
+		brcm,pull = <2>;
+	};
+
+	key_playpause: key_playpause {
+		brcm,pins = <25>;
+		brcm,function = <1>;
+		brcm,pull = <2>;
+	};
+};
+
+&mmcnr {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdio_pins>;
+	bus-width = <4>;
+	status = "okay";
+};
+
+&firmware {
+	expgpio: expgpio {
+		compatible = "raspberrypi,firmware-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "okay";
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_ctsrts_gpio30 &uart0_pins &bt_pins>;
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+	status = "okay";
+
+	spidev0: spidev@0{
+		compatible = "spidev";
+		reg = <0>;	/* CE0 */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-max-frequency = <125000000>;
+	};
+
+	spidev1: spidev@1{
+		compatible = "spidev";
+		reg = <1>;	/* CE1 */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-max-frequency = <125000000>;
+	};
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	clock-frequency = <100000>;
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	clock-frequency = <100000>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	ac108_a: ac108@3b{
+		compatible = "x-power,ac108_0";
+		reg = <0x3b>;
+		#sound-dai-cells = <0>;
+		data-protocol = <0>;
+	};
+};
+
+&i2c2 {
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+&dpi {
+	status = "okay";
+};
+
+&hvs {
+	status = "okay";
+};
+
+&pixelvalve0 {
+	status = "okay";
+};
+
+&pixelvalve1 {
+	status = "okay";
+};
+
+&pixelvalve2 {
+	status = "okay";
+};
+
+&hdmi {
+	status = "okay";
+};
+
+&v3d {
+	status = "okay";
+};
+
+&vc4 {
+	status = "okay";
+};
+
+&i2s {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s_pins>;
+
+	#sound-dai-cells = <0>;
+	status = "okay";
+};
+
+&leds {
+	act_led: act {
+		label = "led0";
+		linux,default-trigger = "mmc0";
+		gpios = <&gpio 29 0>;
+	};
+
+	pwr_led: pwr {
+		label = "led1";
+		linux,default-trigger = "default-on";
+		gpios = <&expgpio 2 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&hdmi {
+	hpd-gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+};
+
+&audio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&audio_pins>;
+	status = "okay";
+};
+
+&sound {
+	compatible = "seeed-voicecard";
+	seeed-voice-card,format = "dsp_a";
+	seeed-voice-card,name = "seeed-4mic-voicecard";
+	status = "okay";
+
+	seeed-voice-card,bitclock-master = <&codec_dai>;
+	seeed-voice-card,frame-master = <&codec_dai>;
+	seeed-voice-card,channels-playback-override = <4>;
+	seeed-voice-card,channels-capture-override  = <4>;
+
+	cpu_dai: seeed-voice-card,cpu {
+		sound-dai = <&i2s>;
+		dai-tdm-slot-num     = <2>;
+		dai-tdm-slot-width   = <32>;
+		dai-tdm-slot-tx-mask = <1 1 0 0>;
+		dai-tdm-slot-rx-mask = <1 1 0 0>;
+	};
+	codec_dai: seeed-voice-card,codec {
+		sound-dai = <&ac108_a>;
+		system-clock-frequency = <24000000>;
+	};
+};
+
+/ {
+	__overrides__ {
+		act_led_gpio = <&act_led>,"gpios:4";
+		act_led_activelow = <&act_led>,"gpios:8";
+		act_led_trigger = <&act_led>,"linux,default-trigger";
+
+		pwr_led_gpio = <&pwr_led>,"gpios:4";
+		pwr_led_activelow = <&pwr_led>,"gpios:8";
+		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
+	};
+};
+
+&i2c_dsi {
+	gpios = <&gpio 44 0
+		 &gpio 45 0>;
+	status = "okay";
+};
+
+&dsi1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+};
